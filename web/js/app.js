@@ -218,6 +218,7 @@ class SudokuApp {
             this.mistakes = state.mistakes || 0;
             this.hintsUsed = state.hintsUsed || 0;
             this.isGameOver = false;
+            this.isAutoSolved = false; // BUG-08 fix: reset auto-solve flag on restore
 
             this.dom.diffBadge.textContent = this.difficulty;
             this.dom.mistakeCounter.textContent = `${this.mistakes} / ${this.maxMistakes}`;
@@ -538,6 +539,8 @@ class SudokuApp {
 
     eraseNumber() {
         if (!this.selectedCell || this.isPaused || this.isGameOver) return;
+        // BUG-06 fix: jangan erase sebelum game dimulai
+        if (!this.isGameStarted) return;
         const { row, col } = this.selectedCell;
         const idx = row * 9 + col;
 
@@ -562,7 +565,8 @@ class SudokuApp {
     }
 
     undo() {
-        if (this.history.length === 0 || this.isPaused || this.isGameOver) {
+        // BUG-05 fix: jangan undo sebelum game dimulai
+        if (!this.isGameStarted || this.history.length === 0 || this.isPaused || this.isGameOver) {
             this.showToast('Tidak ada langkah untuk di-undo');
             return;
         }
@@ -592,6 +596,8 @@ class SudokuApp {
 
     getHint() {
         if (this.isPaused || this.isGameOver) return;
+        // BUG-04 fix: auto-start game jika belum dimulai saat hint diklik
+        if (!this.isGameStarted) this.startGame();
 
         const currentBoardStr = this.board.map(n => n.toString()).join('');
         const solutionStr = this.solution.map(n => n.toString()).join('');
@@ -832,6 +838,12 @@ class SudokuApp {
     }
 
     async submitScore() {
+        // BUG-03 fix: guard terhadap bypass via console
+        if (this.isAutoSolved || this.hintsUsed >= 5 || this.calculatedScore <= 0) {
+            this.showToast('⚠️ Skor tidak memenuhi syarat untuk dikirim.', 'error');
+            return;
+        }
+
         let name = (this.dom.playerNameInput.value || '').trim();
         if (!name) name = 'Pemain Sudoku';
 
