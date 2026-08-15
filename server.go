@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// LeaderboardEntry represents a single leaderboard record.
 type LeaderboardEntry struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -23,6 +24,60 @@ type LeaderboardEntry struct {
 	Mistakes    int    `json:"mistakes"`
 	HintsUsed   int    `json:"hintsUsed"`
 	Date        string `json:"date"`
+}
+
+// submitPayload is the expected client request body.
+// 'Score' field is intentionally IGNORED — server recalculates (BUG-13 fix).
+type submitPayload struct {
+	Name        string `json:"name"`
+	Difficulty  string `json:"difficulty"`
+	TimeSeconds int    `json:"timeSeconds"`
+	Mistakes    int    `json:"mistakes"`
+	HintsUsed   int    `json:"hintsUsed"`
+	// Score field intentionally omitted — server computes it
+}
+
+// calculateScoreLocal mirrors the formula in cmd/wasm/score.go.
+// BUG-13 fix: score is always computed server-side, never trusted from client.
+func calculateScoreLocal(difficulty string, timeSeconds, mistakes, hintsUsed int) (score int, eligible bool) {
+	baseScore := 5000
+	switch difficulty {
+	case "easy":
+		baseScore = 3500
+	case "medium":
+		baseScore = 5500
+	case "hard":
+		baseScore = 8500
+	case "expert":
+		baseScore = 13000
+	}
+
+	if hintsUsed >= 5 {
+		return 0, false
+	}
+
+	hintPenalties := map[int]int{0: 0, 1: 400, 2: 1000, 3: 2000, 4: 3500}
+	hintPenalty := hintPenalties[hintsUsed]
+	timePenalty := timeSeconds
+	mistakePenalty := mistakes * 200
+
+	total := baseScore - timePenalty - mistakePenalty - hintPenalty
+	if total < 0 {
+		total = 0
+	}
+	return total, total > 0
+}
+
+// isAllowedOrigin restricts which origins can POST to the leaderboard.
+// BUG-17 fix: no longer wildcard.
+func isAllowedOrigin(origin string) bool {
+	allowed := []string{"localhost", "127.0.0.1", ".vercel.app"}
+	for _, a := range allowed {
+		if strings.Contains(origin, a) {
+			return true
+		}
+	}
+	return false
 }
 
 var (
@@ -47,9 +102,16 @@ var (
 
 func handleLeaderboardAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// BUG-17 fix: restrict CORS to known safe origins
+	origin := r.Header.Get("Origin")
+	if origin == "" || isAllowedOrigin(origin) {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	} else {
+		w.Header().Set("Access-Control-Allow-Origin", "")
+	}
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
@@ -80,34 +142,61 @@ func handleLeaderboardAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		var entry LeaderboardEntry
-		if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
+		// BUG-13 fix: decode only editable fields; ignore any 'score' from client
+		var payload submitPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
 			return
 		}
 
-		if entry.Name == "" {
-			entry.Name = "Pemain Sudoku"
+		name := strings.TrimSpace(payload.Name)
+		if name == "" {
+			name = "Pemain Sudoku"
 		}
-		if len(entry.Name) > 25 {
-			entry.Name = entry.Name[:25]
+		if len(name) > 25 {
+			name = name[:25]
 		}
-		entry.Difficulty = strings.ToLower(entry.Difficulty)
-		if entry.Difficulty == "" {
-			entry.Difficulty = "medium"
+		// Strip basic HTML tags
+		name = strings.NewReplacer("<", "", ">", "", "/", "").Replace(name)
+
+		diff := strings.ToLower(payload.Difficulty)
+		validDiffs := map[string]bool{"easy": true, "medium": true, "hard": true, "expert": true}
+		if !validDiffs[diff] {
+			diff = "medium"
 		}
 
-		// Anti-Spam / Anti-Cheat: Tolak skor jika 5+ hints atau skor 0
-		if entry.HintsUsed >= 5 || entry.Score <= 0 {
+		timeSeconds := payload.TimeSeconds
+		if timeSeconds < 0 { timeSeconds = 0 }
+		if timeSeconds > 86400 { timeSeconds = 86400 }
+
+		mistakes := payload.Mistakes
+		if mistakes < 0 { mistakes = 0 }
+		if mistakes > 100 { mistakes = 100 }
+
+		hintsUsed := payload.HintsUsed
+		if hintsUsed < 0 { hintsUsed = 0 }
+		if hintsUsed > 100 { hintsUsed = 100 }
+
+		// Recalculate score server-side (client value ignored)
+		serverScore, eligible := calculateScoreLocal(diff, timeSeconds, mistakes, hintsUsed)
+		if !eligible {
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{
-				"error": "Skor tidak memenuhi syarat masuk leaderboard (terlalu banyak hint / skor 0).",
+				"error": "Skor tidak memenuhi syarat masuk leaderboard.",
 			})
 			return
 		}
 
-		entry.ID = fmt.Sprintf("%d", time.Now().UnixNano())
-		entry.Date = time.Now().UTC().Format(time.RFC3339)
+		entry := LeaderboardEntry{
+			ID:          fmt.Sprintf("%d", time.Now().UnixNano()),
+			Name:        name,
+			Difficulty:  diff,
+			Score:       serverScore, // server-computed
+			TimeSeconds: timeSeconds,
+			Mistakes:    mistakes,
+			HintsUsed:   hintsUsed,
+			Date:        time.Now().UTC().Format(time.RFC3339),
+		}
 
 		lbMutex.Lock()
 		list := leaderboard[entry.Difficulty]

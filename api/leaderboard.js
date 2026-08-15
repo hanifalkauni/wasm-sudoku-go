@@ -37,7 +37,7 @@ const rateLimitStore = new Map();
 // ============================================================================
 function calculateScoreServerSide(difficulty, timeSeconds, mistakes, hintsUsed) {
     const baseScores = { easy: 3500, medium: 5500, hard: 8500, expert: 13000 };
-    const baseScore = baseScores[difficulty] || 5500;
+    const baseScore = baseScores[difficulty] ?? 5000; // BUG-15 fix: default 5000 (matches score.go)
 
     // Strict disqualification: 5+ hints = 0 score, not eligible
     if (hintsUsed >= 5) {

@@ -177,7 +177,8 @@ class SudokuApp {
             difficulty: this.difficulty,
             board: this.board,
             initialClues: this.initialClues,
-            solution: this.solution,
+            // BUG-16 fix: solution is NOT stored in localStorage (prevents answer exposure via DevTools)
+            // solution will be regenerated from WASM solver on restore
             notes: this.notes.map(s => Array.from(s)),
             history: this.history,
             timerSeconds: this.timerSeconds,
@@ -211,7 +212,22 @@ class SudokuApp {
             this.difficulty = state.difficulty || 'medium';
             this.board = state.board;
             this.initialClues = state.initialClues;
-            this.solution = state.solution;
+
+            // BUG-16 fix: regenerate solution from WASM instead of reading from localStorage
+            // Reconstruct initial clue-only board, then solve to get the solution
+            const clueOnly = this.board.map((val, i) => this.initialClues[i] ? val : 0);
+            const clueStr = clueOnly.map(n => n.toString()).join('');
+            try {
+                const solveResult = JSON.parse(window.SudokuWasm.solvePuzzle(clueStr));
+                if (solveResult.success) {
+                    this.solution = solveResult.solution.split('').map(Number);
+                } else {
+                    // Fallback: use stored solution if available (legacy saves)
+                    this.solution = state.solution || Array(81).fill(0);
+                }
+            } catch (_) {
+                this.solution = state.solution || Array(81).fill(0);
+            }
             this.notes = state.notes ? state.notes.map(arr => new Set(arr)) : Array.from({ length: 81 }, () => new Set());
             this.history = state.history || [];
             this.timerSeconds = state.timerSeconds || 0;
@@ -1012,7 +1028,10 @@ class SudokuApp {
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.isPaused = false;
         this.timerInterval = setInterval(() => {
-            this.timerSeconds++;
+            // BUG-20 fix: cap timer at 24 hours to prevent negative scores from extremely long sessions
+            if (this.timerSeconds < 86400) {
+                this.timerSeconds++;
+            }
             this.dom.timerText.textContent = this.formatTime(this.timerSeconds);
             if (this.timerSeconds % 3 === 0) {
                 this.saveGameState();
@@ -1170,7 +1189,10 @@ class SudokuApp {
             this.dom.playerNameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    this.submitScore();
+                    // BUG-18 fix: only submit if button is not disabled
+                    if (!this.dom.submitScoreBtn.disabled) {
+                        this.submitScore();
+                    }
                 }
             });
         }
@@ -1251,6 +1273,7 @@ class SudokuApp {
             }
 
             // Arrow Keys Navigation
+            // BUG-14 fix: arrow / WASD only navigates, does NOT auto-start timer
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
                 e.preventDefault();
                 let r = this.selectedCell ? this.selectedCell.row : 0;
@@ -1261,7 +1284,11 @@ class SudokuApp {
                 if (e.key === 'ArrowLeft' || e.key === 'a') c = (c - 1 + 9) % 9;
                 if (e.key === 'ArrowRight' || e.key === 'd') c = (c + 1) % 9;
 
-                this.selectCell(r, c);
+                // Only update selectedCell highlight, do NOT call startGame()
+                if (!this.isPaused && !this.isGameOver) {
+                    this.selectedCell = { row: r, col: c };
+                    this.updateHighlights();
+                }
             }
         });
 
