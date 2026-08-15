@@ -32,6 +32,7 @@ class SudokuApp {
             mistakeCounter: document.getElementById('mistakeCounter'),
             timerText: document.getElementById('gameTimer'),
             timerContainer: document.getElementById('timerContainer'),
+            pauseGameBtn: document.getElementById('pauseGameBtn'),
             notesToggleBtn: document.getElementById('notesToggleBtn'),
             notesBadge: document.getElementById('notesBadge'),
             undoBtn: document.getElementById('undoBtn'),
@@ -824,8 +825,11 @@ class SudokuApp {
             });
         });
 
-        // Timer Pause toggle
+        // Timer & Pause Button toggles
         this.dom.timerContainer.addEventListener('click', () => this.togglePause());
+        if (this.dom.pauseGameBtn) {
+            this.dom.pauseGameBtn.addEventListener('click', () => this.togglePause());
+        }
 
         // Resume button inside Pause Modal
         if (this.dom.resumeBtn) {

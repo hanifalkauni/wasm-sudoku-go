@@ -81,14 +81,21 @@
                         <span id="mistakeCounter" class="status-value">0 / 3</span>
                     </div>
 
-                    <div class="status-item">
-                        <div id="timerContainer" class="timer-container" title="Klik untuk Pause">
+                    <div class="status-item" style="gap: 0.4rem;">
+                        <div id="timerContainer" class="timer-container" title="Waktu Bermain">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
                                 <polyline points="12 6 12 12 16 14"/>
                             </svg>
                             <span id="gameTimer" class="status-value">00:00</span>
                         </div>
+                        <button id="pauseGameBtn" class="btn-pause" title="Jeda Permainan (Pause / Spasi)" aria-label="Pause Game">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                                <rect x="5" y="4" width="4" height="16" rx="1"/>
+                                <rect x="15" y="4" width="4" height="16" rx="1"/>
+                            </svg>
+                            <span>Pause</span>
+                        </button>
                     </div>
                 </div>
 
