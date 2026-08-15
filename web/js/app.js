@@ -846,13 +846,19 @@ class SudokuApp {
     // --------------------------------------------------------------------------
     // Timer, Modal & Pause Management
     // --------------------------------------------------------------------------
-    isModalOpen() {
+    isDialogModalOpen() {
         return (
             (this.dom.victoryModal && this.dom.victoryModal.classList.contains('active')) ||
             (this.dom.gameOverModal && this.dom.gameOverModal.classList.contains('active')) ||
-            (this.dom.pauseModal && this.dom.pauseModal.classList.contains('active')) ||
             (this.dom.infoModal && this.dom.infoModal.classList.contains('active')) ||
             (this.dom.leaderboardModal && this.dom.leaderboardModal.classList.contains('active'))
+        );
+    }
+
+    isModalOpen() {
+        return (
+            this.isDialogModalOpen() ||
+            (this.dom.pauseModal && this.dom.pauseModal.classList.contains('active'))
         );
     }
 
@@ -900,7 +906,8 @@ class SudokuApp {
     }
 
     togglePause() {
-        if (this.isGameOver || this.isModalOpen()) return;
+        // Jangan toggle jika game over atau modal dialog (info, leaderboard, victory, gameover) sedang terbuka
+        if (this.isGameOver || this.isDialogModalOpen()) return;
 
         if (!this.isGameStarted) {
             this.startGame();
@@ -915,7 +922,7 @@ class SudokuApp {
     }
 
     pauseGame() {
-        if (!this.isGameStarted || this.isPaused || this.isGameOver || this.isModalOpen()) return;
+        if (!this.isGameStarted || this.isPaused || this.isGameOver || this.isDialogModalOpen()) return;
 
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
