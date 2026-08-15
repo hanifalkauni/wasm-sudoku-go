@@ -94,9 +94,12 @@ class SudokuApp {
                 this.dom.loadingOverlay.classList.add('hidden');
             }
 
-            // Mulai puzzle baru
-            this.startNewGame(this.difficulty);
-            this.showToast('Go WebAssembly Engine siap! Selamat bermain!');
+            // Cek apakah ada game sebelumnya yang tersimpan di local storage
+            const restored = this.restoreSavedGame();
+            if (!restored) {
+                this.startNewGame(this.difficulty);
+                this.showToast('Go WebAssembly Engine siap! Selamat bermain!');
+            }
         } catch (err) {
             console.error('Error saat inisialisasi:', err);
             if (this.dom.loadingStatus) {
@@ -158,9 +161,90 @@ class SudokuApp {
     }
 
     // --------------------------------------------------------------------------
+    // Auto-Save & Resume Game (Local Storage Persistence)
+    // --------------------------------------------------------------------------
+    saveGameState() {
+        if (this.isGameOver || !this.board || this.board.length !== 81) return;
+
+        const state = {
+            difficulty: this.difficulty,
+            board: this.board,
+            initialClues: this.initialClues,
+            solution: this.solution,
+            notes: this.notes.map(s => Array.from(s)),
+            history: this.history,
+            timerSeconds: this.timerSeconds,
+            mistakes: this.mistakes,
+            hintsUsed: this.hintsUsed,
+            savedAt: Date.now()
+        };
+
+        try {
+            localStorage.setItem('sudoku-recent-game', JSON.stringify(state));
+        } catch (e) {
+            console.warn('Gagal menyimpan game ke localStorage:', e);
+        }
+    }
+
+    restoreSavedGame() {
+        try {
+            const raw = localStorage.getItem('sudoku-recent-game');
+            if (!raw) return false;
+
+            const state = JSON.parse(raw);
+            if (!state || !state.board || state.board.length !== 81) return false;
+
+            // Validasi apakah board belum selesai
+            const boardStr = state.board.map(n => n.toString()).join('');
+            if (window.SudokuWasm.isComplete(boardStr)) {
+                this.clearSavedGame();
+                return false;
+            }
+
+            this.difficulty = state.difficulty || 'medium';
+            this.board = state.board;
+            this.initialClues = state.initialClues;
+            this.solution = state.solution;
+            this.notes = state.notes ? state.notes.map(arr => new Set(arr)) : Array.from({ length: 81 }, () => new Set());
+            this.history = state.history || [];
+            this.timerSeconds = state.timerSeconds || 0;
+            this.mistakes = state.mistakes || 0;
+            this.hintsUsed = state.hintsUsed || 0;
+            this.isGameOver = false;
+
+            this.dom.diffBadge.textContent = this.difficulty;
+            this.dom.mistakeCounter.textContent = `${this.mistakes} / ${this.maxMistakes}`;
+            this.dom.diffTabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.diff === this.difficulty);
+            });
+            this.dom.timerText.textContent = this.formatTime(this.timerSeconds);
+            this.dom.wasmBenchmarkText.textContent = `Melanjutkan game (${this.difficulty})`;
+
+            this.startTimer();
+            this.renderBoard();
+            this.updateNumpadCounts();
+
+            this.showToast(`🎮 Melanjutkan permainan (${this.difficulty.toUpperCase()} • ${this.formatTime(this.timerSeconds)})`);
+            return true;
+        } catch (e) {
+            console.error('Error saat memulihkan saved game:', e);
+            return false;
+        }
+    }
+
+    clearSavedGame() {
+        try {
+            localStorage.removeItem('sudoku-recent-game');
+        } catch (e) {
+            console.warn('Gagal menghapus saved game:', e);
+        }
+    }
+
+    // --------------------------------------------------------------------------
     // Game Initialization & WASM Calls
     // --------------------------------------------------------------------------
     startNewGame(difficulty = 'medium') {
+        this.clearSavedGame();
         this.difficulty = difficulty;
         this.isGameOver = false;
         this.mistakes = 0;
@@ -193,6 +277,7 @@ class SudokuApp {
         this.startTimer();
         this.renderBoard();
         this.updateNumpadCounts();
+        this.saveGameState();
 
         // Close modals if open
         this.dom.victoryModal.classList.remove('active');
@@ -392,6 +477,7 @@ class SudokuApp {
             }
 
             this.renderBoard();
+            this.saveGameState();
             this.checkVictory();
         }
     }
@@ -432,6 +518,7 @@ class SudokuApp {
         this.board[idx] = 0;
         this.notes[idx].clear();
         this.renderBoard();
+        this.saveGameState();
     }
 
     undo() {
@@ -454,6 +541,7 @@ class SudokuApp {
         const col = idx % 9;
         this.selectedCell = { row, col };
         this.renderBoard();
+        this.saveGameState();
     }
 
     toggleNotesMode() {
@@ -482,6 +570,7 @@ class SudokuApp {
                 setTimeout(() => cell.classList.remove('hint-highlight'), 2000);
 
                 this.inputNumber(hint.value);
+                this.saveGameState();
                 this.showToast(`💡 ${hint.reason}`);
             } else {
                 this.showToast(hint.reason || 'Semua sel terisi!');
@@ -523,6 +612,7 @@ class SudokuApp {
         if (window.SudokuWasm.isComplete(boardStr)) {
             this.pauseTimer();
             this.isGameOver = true;
+            this.clearSavedGame();
 
             // 1. Calculate Score using Go WebAssembly Scoring Engine
             const scoreJson = window.SudokuWasm.calculateScore(this.difficulty, this.timerSeconds, this.mistakes, this.hintsUsed);
@@ -555,6 +645,7 @@ class SudokuApp {
     triggerGameOver() {
         this.pauseTimer();
         this.isGameOver = true;
+        this.clearSavedGame();
         this.dom.gameOverModal.classList.add('active');
     }
 
@@ -757,6 +848,9 @@ class SudokuApp {
         this.timerInterval = setInterval(() => {
             this.timerSeconds++;
             this.dom.timerText.textContent = this.formatTime(this.timerSeconds);
+            if (this.timerSeconds % 3 === 0) {
+                this.saveGameState();
+            }
         }, 1000);
     }
 
@@ -964,6 +1058,14 @@ class SudokuApp {
                 if (e.key === 'ArrowRight' || e.key === 'd') c = (c + 1) % 9;
 
                 this.selectCell(r, c);
+            }
+        });
+
+        // Auto-save game state when leaving/switching tabs
+        window.addEventListener('beforeunload', () => this.saveGameState());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                this.saveGameState();
             }
         });
     }
