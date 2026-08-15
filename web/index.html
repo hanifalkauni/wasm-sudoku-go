@@ -94,6 +94,9 @@
 
                 <!-- 9x9 Sudoku Grid (Dihasilkan secara dinamis oleh app.js) -->
                 <div id="sudokuGrid" class="sudoku-grid" role="grid" aria-label="Papan Sudoku 9x9"></div>
+
+                <!-- Hidden Virtual Input for Mobile Soft Keyboard Trigger -->
+                <input type="text" id="virtualMobileInput" class="virtual-mobile-input" inputmode="numeric" pattern="[1-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
             </section>
 
             <!-- Right: Controls, Numpad & Tools -->

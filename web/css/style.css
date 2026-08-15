@@ -1037,3 +1037,22 @@ body {
   color: var(--text-muted);
 }
 
+/* ==========================================================================
+   Virtual Mobile Input for Soft Numeric Keyboard Trigger
+   ========================================================================== */
+.virtual-mobile-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: none;
+  background: transparent;
+  pointer-events: none;
+  font-size: 16px; /* Prevents auto-zoom on iOS */
+  caret-color: transparent;
+  z-index: -10;
+}
+
+

@@ -72,6 +72,7 @@ class SudokuApp {
             lbTableBody: document.getElementById('lbTableBody'),
             lbEmptyState: document.getElementById('lbEmptyState'),
             lbSourceBadge: document.getElementById('lbSourceBadge'),
+            virtualMobileInput: document.getElementById('virtualMobileInput'),
             toastContainer: document.getElementById('toastContainer')
         };
     }
@@ -257,6 +258,21 @@ class SudokuApp {
         if (this.isPaused || this.isGameOver) return;
         this.selectedCell = { row, col };
         this.updateHighlights();
+
+        // Trigger Mobile Numeric Keyboard if cell is editable
+        const idx = row * 9 + col;
+        if (this.dom.virtualMobileInput) {
+            if (!this.initialClues[idx]) {
+                this.dom.virtualMobileInput.value = '';
+                try {
+                    this.dom.virtualMobileInput.focus({ preventScroll: true });
+                } catch (err) {
+                    this.dom.virtualMobileInput.focus();
+                }
+            } else {
+                this.dom.virtualMobileInput.blur();
+            }
+        }
     }
 
     updateHighlights() {
@@ -854,6 +870,27 @@ class SudokuApp {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     this.submitScore();
+                }
+            });
+        }
+
+        // Mobile Soft Keyboard Proxy Events
+        if (this.dom.virtualMobileInput) {
+            this.dom.virtualMobileInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (val) {
+                    const lastChar = val.slice(-1);
+                    if (lastChar >= '1' && lastChar <= '9') {
+                        this.inputNumber(parseInt(lastChar, 10));
+                    }
+                }
+                e.target.value = '';
+            });
+
+            this.dom.virtualMobileInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' || e.key === 'Delete') {
+                    e.preventDefault();
+                    this.eraseNumber();
                 }
             });
         }
