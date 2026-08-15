@@ -1,6 +1,4 @@
 {
-  "version": 2,
-  "public": true,
   "cleanUrls": true,
   "buildCommand": "bash scripts/build.sh",
   "outputDirectory": "web",
