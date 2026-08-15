@@ -19,6 +19,7 @@ class SudokuApp {
         
         this.timerSeconds = 0;
         this.timerInterval = null;
+        this.isGameStarted = false;
         this.isPaused = false;
         this.isGameOver = false;
 
@@ -220,7 +221,14 @@ class SudokuApp {
             this.dom.timerText.textContent = this.formatTime(this.timerSeconds);
             this.dom.wasmBenchmarkText.textContent = `Melanjutkan game (${this.difficulty})`;
 
-            this.startTimer();
+            if (this.timerSeconds > 0 || (this.history && this.history.length > 0)) {
+                this.isGameStarted = true;
+                this.startTimer();
+            } else {
+                this.isGameStarted = false;
+            }
+            this.updatePlayPauseBtn();
+
             this.renderBoard();
             this.updateNumpadCounts();
 
@@ -247,6 +255,7 @@ class SudokuApp {
         this.clearSavedGame();
         this.difficulty = difficulty;
         this.isGameOver = false;
+        this.isGameStarted = false;
         this.mistakes = 0;
         this.hintsUsed = 0;
         this.calculatedScore = 0;
@@ -274,7 +283,7 @@ class SudokuApp {
         }
 
         this.resetTimer();
-        this.startTimer();
+        this.updatePlayPauseBtn();
         this.renderBoard();
         this.updateNumpadCounts();
         this.saveGameState();
@@ -284,6 +293,8 @@ class SudokuApp {
         this.dom.gameOverModal.classList.remove('active');
         if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('active');
         if (this.dom.leaderboardModal) this.dom.leaderboardModal.classList.remove('active');
+
+        this.showToast('💡 Puzzle siap! Klik "Mulai ▶️" atau sentuh kotak untuk bermain.');
     }
 
     parseBoardData(puzzleStr, solutionStr) {
@@ -353,8 +364,14 @@ class SudokuApp {
         this.selectedCell = { row, col };
         this.updateHighlights();
 
-        // Trigger Mobile Numeric Keyboard if cell is editable
         const idx = row * 9 + col;
+
+        // Auto-start timer on first cell interaction if not yet started
+        if (!this.isGameStarted && !this.initialClues[idx]) {
+            this.startGame();
+        }
+
+        // Trigger Mobile Numeric Keyboard if cell is editable
         if (this.dom.virtualMobileInput) {
             if (!this.initialClues[idx]) {
                 this.dom.virtualMobileInput.value = '';
@@ -433,6 +450,11 @@ class SudokuApp {
 
         // Cannot overwrite initial clues
         if (this.initialClues[idx]) return;
+
+        // Auto-start timer if not started
+        if (!this.isGameStarted) {
+            this.startGame();
+        }
 
         if (this.isNotesMode) {
             // Toggle note
@@ -819,8 +841,56 @@ class SudokuApp {
         );
     }
 
+    startGame() {
+        if (this.isGameStarted || this.isGameOver) return;
+        this.isGameStarted = true;
+        this.isPaused = false;
+        this.startTimer();
+        this.updatePlayPauseBtn();
+        this.showToast('⏱️ Permainan dimulai! Selamat bermain!');
+    }
+
+    updatePlayPauseBtn() {
+        if (!this.dom.pauseGameBtn) return;
+
+        if (!this.isGameStarted) {
+            this.dom.pauseGameBtn.classList.add('ready');
+            this.dom.pauseGameBtn.title = 'Mulai Bermain (Aktifkan Timer)';
+            this.dom.pauseGameBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Mulai</span>
+            `;
+        } else if (this.isPaused) {
+            this.dom.pauseGameBtn.classList.remove('ready');
+            this.dom.pauseGameBtn.title = 'Lanjutkan Permainan (Spasi)';
+            this.dom.pauseGameBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Lanjut</span>
+            `;
+        } else {
+            this.dom.pauseGameBtn.classList.remove('ready');
+            this.dom.pauseGameBtn.title = 'Jeda Permainan (Pause / Spasi)';
+            this.dom.pauseGameBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                    <rect x="5" y="4" width="4" height="16" rx="1"/>
+                    <rect x="15" y="4" width="4" height="16" rx="1"/>
+                </svg>
+                <span>Pause</span>
+            `;
+        }
+    }
+
     togglePause() {
         if (this.isGameOver || this.isModalOpen()) return;
+
+        if (!this.isGameStarted) {
+            this.startGame();
+            return;
+        }
 
         if (this.isPaused) {
             this.resumeGame();
@@ -830,13 +900,14 @@ class SudokuApp {
     }
 
     pauseGame() {
-        if (this.isPaused || this.isGameOver || this.isModalOpen()) return;
+        if (!this.isGameStarted || this.isPaused || this.isGameOver || this.isModalOpen()) return;
 
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
         this.isPaused = true;
+        this.updatePlayPauseBtn();
         if (this.dom.pauseModal) this.dom.pauseModal.classList.add('active');
         this.showToast('Game di-pause (Tekan Spasi untuk lanjut)');
     }
@@ -847,6 +918,7 @@ class SudokuApp {
         this.isPaused = false;
         if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('active');
         this.startTimer();
+        this.updatePlayPauseBtn();
         this.showToast('Game dilanjutkan');
     }
 
@@ -928,9 +1000,22 @@ class SudokuApp {
         });
 
         // Timer & Pause Button toggles
-        this.dom.timerContainer.addEventListener('click', () => this.togglePause());
+        this.dom.timerContainer.addEventListener('click', () => {
+            if (!this.isGameStarted) {
+                this.startGame();
+            } else {
+                this.togglePause();
+            }
+        });
+
         if (this.dom.pauseGameBtn) {
-            this.dom.pauseGameBtn.addEventListener('click', () => this.togglePause());
+            this.dom.pauseGameBtn.addEventListener('click', () => {
+                if (!this.isGameStarted) {
+                    this.startGame();
+                } else {
+                    this.togglePause();
+                }
+            });
         }
 
         // Resume button inside Pause Modal
