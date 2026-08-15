@@ -333,6 +333,30 @@
         </div>
     </div>
 
+    <!-- Instant Solve Confirmation Modal -->
+    <div id="solveConfirmModal" class="modal-overlay" role="dialog" aria-modal="true">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="28" height="28">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <h2 class="modal-title">Selesaikan Otomatis?</h2>
+            <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 0.75rem; line-height: 1.4;">
+                Go WebAssembly akan menyelesaikan seluruh papan secara instan.
+            </p>
+            <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #fca5a5; line-height: 1.4;">
+                ⚠️ <strong>Perhatian:</strong> Anda <strong>tidak akan mendapatkan poin (0 skor)</strong> dan puzzle ini <strong>tidak dapat dimasukkan ke Leaderboard</strong>.
+            </div>
+            <div style="display: flex; gap: 0.75rem; width: 100%;">
+                <button id="cancelSolveBtn" class="btn-secondary" style="flex: 1;">Batal</button>
+                <button id="confirmSolveBtn" class="btn-primary" style="flex: 1; background: linear-gradient(135deg, #f59e0b, #ef4444); border: none;">Ya, Selesaikan ⚡</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Info / How to Play Modal -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-card" style="text-align: left; max-width: 480px;">

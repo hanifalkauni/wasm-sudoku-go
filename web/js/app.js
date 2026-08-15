@@ -22,6 +22,7 @@ class SudokuApp {
         this.isGameStarted = false;
         this.isPaused = false;
         this.isGameOver = false;
+        this.isAutoSolved = false;
 
         this.hintsUsed = 0;
         this.calculatedScore = 0;
@@ -56,6 +57,9 @@ class SudokuApp {
             resumeBtn: document.getElementById('resumeBtn'),
             vicNewGameBtn: document.getElementById('vicNewGameBtn'),
             retryBtn: document.getElementById('retryBtn'),
+            solveConfirmModal: document.getElementById('solveConfirmModal'),
+            cancelSolveBtn: document.getElementById('cancelSolveBtn'),
+            confirmSolveBtn: document.getElementById('confirmSolveBtn'),
             vicTime: document.getElementById('vicTime'),
             vicDiff: document.getElementById('vicDiff'),
             vicScore: document.getElementById('vicScore'),
@@ -256,6 +260,7 @@ class SudokuApp {
         this.difficulty = difficulty;
         this.isGameOver = false;
         this.isGameStarted = false;
+        this.isAutoSolved = false;
         this.mistakes = 0;
         this.hintsUsed = 0;
         this.calculatedScore = 0;
@@ -292,6 +297,7 @@ class SudokuApp {
         this.dom.victoryModal.classList.remove('active');
         this.dom.gameOverModal.classList.remove('active');
         if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('active');
+        if (this.dom.solveConfirmModal) this.dom.solveConfirmModal.classList.remove('active');
         if (this.dom.leaderboardModal) this.dom.leaderboardModal.classList.remove('active');
 
         this.showToast('💡 Puzzle siap! Klik "Mulai ▶️" atau sentuh kotak untuk bermain.');
@@ -615,6 +621,23 @@ class SudokuApp {
 
     solveWasm() {
         if (this.isGameOver) return;
+        if (this.dom.solveConfirmModal) {
+            this.dom.solveConfirmModal.classList.add('active');
+        } else {
+            this.executeSolveWasm();
+        }
+    }
+
+    closeSolveConfirmModal() {
+        if (this.dom.solveConfirmModal) {
+            this.dom.solveConfirmModal.classList.remove('active');
+        }
+    }
+
+    executeSolveWasm() {
+        if (this.isGameOver) return;
+        this.closeSolveConfirmModal();
+        this.isAutoSolved = true;
 
         const boardStr = this.board.map(n => n.toString()).join('');
         const start = performance.now();
@@ -630,7 +653,7 @@ class SudokuApp {
                 }
                 this.renderBoard();
                 this.dom.wasmBenchmarkText.textContent = `Wasm Solver: ${result.executionTimeMicroseconds}µs (${elapsed}ms JS)`;
-                this.showToast(`⚡ Puzzle diselesaikan dalam ${result.executionTimeMicroseconds} mikrodetik!`);
+                this.showToast(`⚡ Diselesaikan oleh Go WASM dalam ${result.executionTimeMicroseconds}µs!`);
                 this.checkVictory();
             } else {
                 this.showToast('Gagal menyelesaikan puzzle (ada kesalahan angka)', 'error');
@@ -647,8 +670,9 @@ class SudokuApp {
             this.isGameOver = true;
             this.clearSavedGame();
 
-            // Pastikan pause modal tidak aktif
+            // Pastikan pause modal & confirm modal tidak aktif
             if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('active');
+            if (this.dom.solveConfirmModal) this.dom.solveConfirmModal.classList.remove('active');
 
             // 1. Calculate Score using Go WebAssembly Scoring Engine
             const scoreJson = window.SudokuWasm.calculateScore(this.difficulty, this.timerSeconds, this.mistakes, this.hintsUsed);
@@ -658,18 +682,29 @@ class SudokuApp {
                 this.dom.vicScore.textContent = this.calculatedScore.toLocaleString();
                 this.dom.vicRankBadge.textContent = scoreData.rankTitle || 'Sudoku Solver';
 
-                // Evaluasi kelayakan Leaderboard (Anti-Spam Hint: diskualifikasi jika >= 5 hint atau skor 0)
-                const isDisqualified = this.hintsUsed >= 5 || this.calculatedScore <= 0 || scoreData.eligibleForLeaderboard === false;
-
-                if (isDisqualified) {
+                // Jika diselesaikan otomatis oleh AI/WASM Solver: 0 Poin dan diskualifikasi
+                if (this.isAutoSolved) {
+                    this.calculatedScore = 0;
+                    this.dom.vicScore.textContent = '0';
+                    this.dom.vicRankBadge.textContent = '🤖 WASM Solver (0 Poin)';
                     this.dom.submitScoreBtn.disabled = true;
                     this.dom.submitScoreBtn.textContent = 'Tidak Memenuhi Syarat';
                     this.dom.submitStatusText.style.color = 'var(--accent-rose)';
-                    this.dom.submitStatusText.textContent = scoreData.message || `⚠️ Penggunaan Hint berlebih (${this.hintsUsed}x). Skor 0 (Mode Belajar/Latihan).`;
+                    this.dom.submitStatusText.textContent = '⚠️ Puzzle diselesaikan otomatis oleh AI/WASM Solver. Skor 0 (Tidak dapat masuk Leaderboard).';
                 } else {
-                    this.dom.submitScoreBtn.disabled = false;
-                    this.dom.submitScoreBtn.textContent = 'Kirim Skor 🚀';
-                    this.dom.submitStatusText.textContent = '';
+                    // Evaluasi kelayakan Leaderboard (Anti-Spam Hint: diskualifikasi jika >= 5 hint atau skor 0)
+                    const isDisqualified = this.hintsUsed >= 5 || this.calculatedScore <= 0 || scoreData.eligibleForLeaderboard === false;
+
+                    if (isDisqualified) {
+                        this.dom.submitScoreBtn.disabled = true;
+                        this.dom.submitScoreBtn.textContent = 'Tidak Memenuhi Syarat';
+                        this.dom.submitStatusText.style.color = 'var(--accent-rose)';
+                        this.dom.submitStatusText.textContent = scoreData.message || `⚠️ Penggunaan Hint berlebih (${this.hintsUsed}x). Skor 0 (Mode Belajar/Latihan).`;
+                    } else {
+                        this.dom.submitScoreBtn.disabled = false;
+                        this.dom.submitScoreBtn.textContent = 'Kirim Skor 🚀';
+                        this.dom.submitStatusText.textContent = '';
+                    }
                 }
             } catch (e) {
                 console.error('Error saat parse score dari Wasm:', e);
@@ -852,6 +887,7 @@ class SudokuApp {
         return (
             (this.dom.victoryModal && this.dom.victoryModal.classList.contains('active')) ||
             (this.dom.gameOverModal && this.dom.gameOverModal.classList.contains('active')) ||
+            (this.dom.solveConfirmModal && this.dom.solveConfirmModal.classList.contains('active')) ||
             (this.dom.infoModal && this.dom.infoModal.classList.contains('active')) ||
             (this.dom.leaderboardModal && this.dom.leaderboardModal.classList.contains('active'))
         );
@@ -1008,6 +1044,12 @@ class SudokuApp {
         this.dom.notesToggleBtn.addEventListener('click', () => this.toggleNotesMode());
         this.dom.hintBtn.addEventListener('click', () => this.getHint());
         this.dom.solveWasmBtn.addEventListener('click', () => this.solveWasm());
+        if (this.dom.cancelSolveBtn) {
+            this.dom.cancelSolveBtn.addEventListener('click', () => this.closeSolveConfirmModal());
+        }
+        if (this.dom.confirmSolveBtn) {
+            this.dom.confirmSolveBtn.addEventListener('click', () => this.executeSolveWasm());
+        }
         this.dom.newGameBtn.addEventListener('click', () => this.startNewGame(this.difficulty));
 
         // Numpad clicks
