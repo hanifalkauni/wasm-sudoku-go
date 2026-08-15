@@ -647,18 +647,33 @@ class SudokuApp {
             this.isGameOver = true;
             this.clearSavedGame();
 
+            // Pastikan pause modal tidak aktif
+            if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('active');
+
             // 1. Calculate Score using Go WebAssembly Scoring Engine
             const scoreJson = window.SudokuWasm.calculateScore(this.difficulty, this.timerSeconds, this.mistakes, this.hintsUsed);
             try {
                 const scoreData = JSON.parse(scoreJson);
-                this.calculatedScore = scoreData.score || 100;
+                this.calculatedScore = scoreData.score || 0;
                 this.dom.vicScore.textContent = this.calculatedScore.toLocaleString();
-                this.dom.vicRankBadge.textContent = scoreData.rankTitle || 'Sudoku Master';
+                this.dom.vicRankBadge.textContent = scoreData.rankTitle || 'Sudoku Solver';
+
+                // Evaluasi kelayakan Leaderboard (Anti-Spam Hint)
+                if (scoreData.score <= 0 || !scoreData.eligibleForLeaderboard) {
+                    this.dom.submitScoreBtn.disabled = true;
+                    this.dom.submitScoreBtn.textContent = 'Tidak Memenuhi Syarat';
+                    this.dom.submitStatusText.style.color = 'var(--accent-rose)';
+                    this.dom.submitStatusText.textContent = scoreData.message || `⚠️ Penggunaan Hint berlebih (${this.hintsUsed}x). Skor 0 (Mode Belajar/Latihan).`;
+                } else {
+                    this.dom.submitScoreBtn.disabled = false;
+                    this.dom.submitScoreBtn.textContent = 'Kirim Skor 🚀';
+                    this.dom.submitStatusText.textContent = '';
+                }
             } catch (e) {
                 console.error('Error saat parse score dari Wasm:', e);
-                this.calculatedScore = 1000;
-                this.dom.vicScore.textContent = '1,000';
-                this.dom.vicRankBadge.textContent = 'Sudoku Master';
+                this.calculatedScore = 0;
+                this.dom.vicScore.textContent = '0';
+                this.dom.vicRankBadge.textContent = 'Sudoku Solver';
             }
 
             this.dom.vicTime.textContent = this.formatTime(this.timerSeconds);
@@ -667,9 +682,6 @@ class SudokuApp {
             // Prefill player name from localStorage
             const savedName = localStorage.getItem('sudoku-player-name') || '';
             this.dom.playerNameInput.value = savedName;
-            this.dom.submitStatusText.textContent = '';
-            this.dom.submitScoreBtn.disabled = false;
-            this.dom.submitScoreBtn.textContent = 'Kirim Skor 🚀';
 
             this.dom.victoryModal.classList.add('active');
         }
@@ -938,7 +950,10 @@ class SudokuApp {
     }
 
     pauseTimer() {
-        this.pauseGame();
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
     }
 
     resetTimer() {

@@ -96,6 +96,16 @@ func handleLeaderboardAPI(w http.ResponseWriter, r *http.Request) {
 		if entry.Difficulty == "" {
 			entry.Difficulty = "medium"
 		}
+
+		// Anti-Spam / Anti-Cheat: Tolak skor jika 5+ hints atau skor 0
+		if entry.HintsUsed >= 5 || entry.Score <= 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"error": "Skor tidak memenuhi syarat masuk leaderboard (terlalu banyak hint / skor 0).",
+			})
+			return
+		}
+
 		entry.ID = fmt.Sprintf("%d", time.Now().UnixNano())
 		entry.Date = time.Now().UTC().Format(time.RFC3339)
 

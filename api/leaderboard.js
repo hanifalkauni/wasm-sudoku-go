@@ -140,7 +140,14 @@ export default async function handler(req, res) {
             timeSeconds = Math.max(0, parseInt(timeSeconds, 10) || 0);
             mistakes = Math.max(0, parseInt(mistakes, 10) || 0);
             hintsUsed = Math.max(0, parseInt(hintsUsed, 10) || 0);
-            score = Math.max(100, parseInt(score, 10) || 100);
+            score = Math.max(0, parseInt(score, 10) || 0);
+
+            // Anti-Spam / Anti-Cheat: Disqualify submissions with 5+ hints or 0 score
+            if (hintsUsed >= 5 || score <= 0) {
+                return res.status(400).json({
+                    error: "Skor tidak memenuhi syarat masuk leaderboard (terlalu banyak hint / skor 0)."
+                });
+            }
 
             const newEntry = {
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
