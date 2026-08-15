@@ -200,7 +200,7 @@ class SudokuApp {
             if (!raw) return false;
 
             const state = JSON.parse(raw);
-            if (!state || !state.board || state.board.length !== 81) return false;
+            if (!state || !state.board || !Array.isArray(state.board) || state.board.length !== 81 || !state.initialClues || !Array.isArray(state.initialClues) || state.initialClues.length !== 81) return false;
 
             // Validasi apakah board belum selesai
             const boardStr = state.board.map(n => n.toString()).join('');
@@ -1221,6 +1221,21 @@ class SudokuApp {
 
         // Keyboard Controls
         window.addEventListener('keydown', (e) => {
+            // 0. ESCAPE KEY HANDLING (Close active dialog modals)
+            if (e.key === 'Escape') {
+                if (this.dom.infoModal && this.dom.infoModal.classList.contains('active')) {
+                    this.dom.infoModal.classList.remove('active');
+                    return;
+                }
+                if (this.dom.leaderboardModal && this.dom.leaderboardModal.classList.contains('active')) {
+                    this.closeLeaderboard();
+                    return;
+                }
+                if (this.dom.solveConfirmModal && this.dom.solveConfirmModal.classList.contains('active')) {
+                    this.closeSolveConfirmModal();
+                    return;
+                }
+            }
             // 1. SPACE KEY HANDLING (Global Pause & Resume)
             if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
                 // If typing inside player name input, allow space
