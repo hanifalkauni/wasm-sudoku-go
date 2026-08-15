@@ -99,8 +99,22 @@
                     </div>
                 </div>
 
-                <!-- 9x9 Sudoku Grid (Dihasilkan secara dinamis oleh app.js) -->
-                <div id="sudokuGrid" class="sudoku-grid" role="grid" aria-label="Papan Sudoku 9x9"></div>
+                <!-- 9x9 Sudoku Grid wrapped in blur-ready container -->
+                <div id="boardWrapper" class="board-wrapper board-locked">
+                    <div id="sudokuGrid" class="sudoku-grid" role="grid" aria-label="Papan Sudoku 9x9"></div>
+                    <!-- Blur Overlay - shown when game not started yet -->
+                    <div id="boardBlurOverlay" class="board-blur-overlay" role="button" tabindex="0" aria-label="Klik untuk mulai bermain">
+                        <div class="blur-overlay-content">
+                            <div class="blur-play-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                </svg>
+                            </div>
+                            <p class="blur-overlay-title">Siap Bermain?</p>
+                            <p class="blur-overlay-hint">Klik <strong>Mulai ▶</strong> atau sentuh papan ini untuk memulai timer dan bermain!</p>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Hidden Virtual Input for Mobile Soft Keyboard Trigger -->
                 <input type="text" id="virtualMobileInput" class="virtual-mobile-input" inputmode="numeric" pattern="[1-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">

@@ -403,6 +403,111 @@ body {
    Sudoku Grid 9x9
    ========================================================================== */
 
+/* Board wrapper - container for grid + blur overlay */
+.board-wrapper {
+  position: relative;
+  display: inline-block;
+  border-radius: var(--radius-md);
+}
+
+/* Blur overlay (shown when board is locked / not started) */
+.board-blur-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: rgba(11, 16, 27, 0.35);
+  backdrop-filter: blur(0px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, backdrop-filter 0.35s ease;
+  cursor: pointer;
+}
+
+/* When board is locked (game not started), apply blur + show overlay */
+.board-locked .sudoku-grid {
+  filter: blur(6px);
+  transition: filter 0.4s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.board-locked .board-blur-overlay {
+  backdrop-filter: blur(6px);
+  background: rgba(11, 16, 27, 0.55);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Overlay inner content */
+.blur-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  padding: 1.5rem 2rem;
+  background: rgba(30, 40, 58, 0.88);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.2);
+  animation: fadeInUp 0.45s ease;
+}
+
+.blur-play-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(6, 182, 212, 0.3));
+  border: 2px solid var(--accent-emerald);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #34d399;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  animation: pulsePlay 2s infinite ease-in-out;
+}
+
+.blur-overlay-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.blur-overlay-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+/* Sudoku grid unlock animation */
+.sudoku-grid {
+  transition: filter 0.4s ease;
+}
+
+@media (max-width: 520px) {
+  .board-wrapper {
+    width: 90vw;
+    max-width: 360px;
+  }
+  .blur-overlay-content {
+    padding: 1rem 1.25rem;
+  }
+  .blur-play-icon {
+    width: 56px;
+    height: 56px;
+  }
+  .blur-overlay-title {
+    font-size: 1rem;
+  }
+}
+
 .sudoku-grid {
   display: grid;
   grid-template-columns: repeat(9, 1fr);

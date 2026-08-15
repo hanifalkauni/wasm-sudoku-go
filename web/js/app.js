@@ -30,6 +30,8 @@ class SudokuApp {
 
         this.dom = {
             grid: document.getElementById('sudokuGrid'),
+            boardWrapper: document.getElementById('boardWrapper'),
+            boardBlurOverlay: document.getElementById('boardBlurOverlay'),
             diffBadge: document.getElementById('currentDiffBadge'),
             mistakeCounter: document.getElementById('mistakeCounter'),
             timerText: document.getElementById('gameTimer'),
@@ -232,6 +234,7 @@ class SudokuApp {
                 this.isGameStarted = false;
             }
             this.updatePlayPauseBtn();
+            this.updateBoardLock();
 
             this.renderBoard();
             this.updateNumpadCounts();
@@ -289,6 +292,7 @@ class SudokuApp {
 
         this.resetTimer();
         this.updatePlayPauseBtn();
+        this.updateBoardLock();
         this.renderBoard();
         this.updateNumpadCounts();
         this.saveGameState();
@@ -900,12 +904,22 @@ class SudokuApp {
         );
     }
 
+    updateBoardLock() {
+        if (!this.dom.boardWrapper) return;
+        if (this.isGameStarted) {
+            this.dom.boardWrapper.classList.remove('board-locked');
+        } else {
+            this.dom.boardWrapper.classList.add('board-locked');
+        }
+    }
+
     startGame() {
         if (this.isGameStarted || this.isGameOver) return;
         this.isGameStarted = true;
         this.isPaused = false;
         this.startTimer();
         this.updatePlayPauseBtn();
+        this.updateBoardLock();
         this.showToast('⏱️ Permainan dimulai! Selamat bermain!');
     }
 
@@ -1051,6 +1065,21 @@ class SudokuApp {
             this.dom.confirmSolveBtn.addEventListener('click', () => this.executeSolveWasm());
         }
         this.dom.newGameBtn.addEventListener('click', () => this.startNewGame(this.difficulty));
+
+        // Blur overlay click - start game when user taps the locked board
+        if (this.dom.boardBlurOverlay) {
+            this.dom.boardBlurOverlay.addEventListener('click', () => {
+                if (!this.isGameStarted && !this.isGameOver) {
+                    this.startGame();
+                }
+            });
+            this.dom.boardBlurOverlay.addEventListener('keydown', (e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !this.isGameStarted) {
+                    e.preventDefault();
+                    this.startGame();
+                }
+            });
+        }
 
         // Numpad clicks
         this.dom.numBtns.forEach(btn => {
