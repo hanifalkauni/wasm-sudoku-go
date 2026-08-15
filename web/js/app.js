@@ -599,7 +599,10 @@ class SudokuApp {
                 cell.classList.add('hint-highlight');
                 setTimeout(() => cell.classList.remove('hint-highlight'), 2000);
 
+                const prevNotesMode = this.isNotesMode;
+                this.isNotesMode = false;
                 this.inputNumber(hint.value);
+                this.isNotesMode = prevNotesMode;
                 this.saveGameState();
                 this.showToast(`💡 ${hint.reason}`);
             } else {
@@ -1077,13 +1080,6 @@ class SudokuApp {
                 }
                 e.target.value = '';
             });
-
-            this.dom.virtualMobileInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' || e.key === 'Delete') {
-                    e.preventDefault();
-                    this.eraseNumber();
-                }
-            });
         }
 
         // Info modal
@@ -1113,28 +1109,36 @@ class SudokuApp {
             // 2. Ignore gameplay inputs if paused, game over, or modal is open
             if (this.isPaused || this.isGameOver || this.isModalOpen()) return;
 
-            // Numbers 1-9
-            if (e.key >= '1' && e.key <= '9') {
-                this.inputNumber(parseInt(e.key, 10));
+            // Numbers 1-9 (Main keyboard and Numpad)
+            if ((e.key >= '1' && e.key <= '9') || (e.code && e.code.startsWith('Numpad') && e.code.slice(6) >= '1' && e.code.slice(6) <= '9')) {
+                e.preventDefault();
+                const num = (e.key >= '1' && e.key <= '9') ? parseInt(e.key, 10) : parseInt(e.code.slice(6), 10);
+                this.inputNumber(num);
+                if (this.dom.virtualMobileInput) this.dom.virtualMobileInput.value = '';
                 return;
             }
 
-            // Erase
+            // Erase (Backspace / Delete)
             if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
                 this.eraseNumber();
+                if (this.dom.virtualMobileInput) this.dom.virtualMobileInput.value = '';
                 return;
             }
 
             // Shortcuts
             if (e.key.toLowerCase() === 'n') {
+                e.preventDefault();
                 this.toggleNotesMode();
                 return;
             }
             if (e.key.toLowerCase() === 'u') {
+                e.preventDefault();
                 this.undo();
                 return;
             }
             if (e.key.toLowerCase() === 'h') {
+                e.preventDefault();
                 this.getHint();
                 return;
             }
