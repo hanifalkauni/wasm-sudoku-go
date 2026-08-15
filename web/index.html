@@ -51,11 +51,12 @@
                         <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
                     </svg>
                 </button>
-                <button id="infoBtn" class="btn-icon" title="Informasi & Cara Main" aria-label="Info">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button id="infoBtn" class="btn-header-info" title="Informasi & Cara Bermain" aria-label="Cara Bermain">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="M12 16v-4M12 8h.01"/>
                     </svg>
+                    <span>Cara Bermain</span>
                 </button>
                 <button id="themeToggleBtn" class="btn-icon" title="Ganti Tema (Dark/Light)" aria-label="Toggle Theme">
                     <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -371,24 +372,98 @@
         </div>
     </div>
 
-    <!-- Info / How to Play Modal -->
-    <div id="infoModal" class="modal-overlay">
-        <div class="modal-card" style="text-align: left; max-width: 480px;">
-            <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--accent-cyan); margin-bottom: 0.5rem;">Informasi & Cara Bermain</h2>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">
-                Game Sudoku ini menggunakan <strong>Go WebAssembly</strong> yang berjalan langsung di browser Anda untuk membuat puzzle, mencari solusi, dan memvalidasi langkah secara instan tanpa server backend!
-            </p>
-            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.25rem;">Shortcut Keyboard:</h4>
-            <ul style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.25rem; line-height: 1.6; margin-bottom: 1rem;">
-                <li><strong>Panah / WASD</strong>: Navigasi sel</li>
-                <li><strong>Angka 1 - 9</strong>: Masukkan angka / catatan</li>
-                <li><strong>Backspace / Delete</strong>: Hapus angka</li>
-                <li><strong>N</strong>: Toggle Mode Notes (Pensil)</li>
-                <li><strong>U</strong>: Undo langkah</li>
-                <li><strong>H</strong>: Minta petunjuk (Hint)</li>
-                <li><strong>Spasi</strong>: Pause / Resume timer</li>
-            </ul>
-            <button id="closeInfoBtn" class="btn-secondary" style="width: 100%;">Tutup</button>
+    <!-- Info / How to Play Modal (Detailed & Complete Guide) -->
+    <div id="infoModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+        <div class="modal-card info-modal-card">
+            <div class="info-modal-header">
+                <div class="info-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="26" height="26">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                </div>
+                <div class="info-modal-title-group">
+                    <h2 id="infoModalTitle" class="info-modal-title">Informasi &amp; Cara Bermain</h2>
+                    <span class="info-modal-subtitle">Panduan Lengkap WebAssembly Sudoku Master</span>
+                </div>
+            </div>
+
+            <div class="info-modal-body">
+                <!-- Seksi 1: Teknologi Engine WASM -->
+                <div class="info-section">
+                    <h4 class="info-section-title">
+                        <span class="info-sec-icon">🚀</span> Teknologi Go WebAssembly Engine
+                    </h4>
+                    <p class="info-text">
+                        Game Sudoku ini ditenagai oleh <strong>Go WebAssembly (WASM)</strong> yang berjalan 100% langsung di browser Anda. Pembuatan puzzle, penentuan solusi unik, algoritma solver backtracking, dan validasi papan diproses secara instan di sisi klien tanpa tergantung pada server backend!
+                    </p>
+                </div>
+
+                <!-- Seksi 2: Aturan Dasar Sudoku -->
+                <div class="info-section">
+                    <h4 class="info-section-title">
+                        <span class="info-sec-icon">🧩</span> Aturan Dasar Permainan
+                    </h4>
+                    <p class="info-text">
+                        Tujuan utama permainan adalah mengisikan angka <strong>1 sampai 9</strong> ke dalam papan grid 9x9 sehingga memenuhi kriteria:
+                    </p>
+                    <ul class="info-list">
+                        <li><strong>Baris:</strong> Setiap baris horizontal (9 sel) berisi angka 1–9 tanpa duplikasi.</li>
+                        <li><strong>Kolom:</strong> Setiap kolom vertikal (9 sel) berisi angka 1–9 tanpa duplikasi.</li>
+                        <li><strong>Kotak 3x3:</strong> Setiap blok sub-grid 3x3 berisi angka 1–9 tanpa duplikasi.</li>
+                    </ul>
+                </div>
+
+                <!-- Seksi 3: Fitur & Mekanisme Permainan -->
+                <div class="info-section">
+                    <h4 class="info-section-title">
+                        <span class="info-sec-icon">🎮</span> Fitur Unggulan &amp; Mekanisme Game
+                    </h4>
+                    <ul class="info-list">
+                        <li><strong>Tombol Mulai ▶️ &amp; Auto-Blur:</strong> Papan Sudoku diblur sebelum permainan dimulai untuk mencegah persiapan jawaban sebelum timer berjalan.</li>
+                        <li><strong>Mode Catatan (Pensil ✏️ / Key N):</strong> Masukkan potensi angka kandidat ke dalam sel tanpa dianggap sebagai jawaban final.</li>
+                        <li><strong>Auto-Clean Notes:</strong> Catatan kandidat pada baris, kolom, dan kotak 3x3 yang sama akan terhapus otomatis saat angka yang benar terisi.</li>
+                        <li><strong>Petunjuk (Hint 💡 / Key H):</strong> Membantu mengisi 1 sel kosong beserta penjelasan logika solusinya.</li>
+                        <li><strong>Selesaikan Otomatis (Instant Solve ⚡):</strong> Menggunakan algoritma Go WASM untuk menyelesaikan papan secara instan (Mode Latihan/0 Skor).</li>
+                    </ul>
+                </div>
+
+                <!-- Seksi 4: Sistem Skor & Anti-Spam Leaderboard -->
+                <div class="info-section">
+                    <h4 class="info-section-title">
+                        <span class="info-sec-icon">🏆</span> Sistem Skor &amp; Anti-Spam Leaderboard
+                    </h4>
+                    <p class="info-text">
+                        Skor kompetitif dihitung secara ketat dan diverifikasi oleh server dengan aturan:
+                    </p>
+                    <ul class="info-list">
+                        <li><strong>Skor Dasar:</strong> Easy (3.500 Poin), Medium (5.500 Poin), Hard (8.500 Poin), Expert (13.000 Poin).</li>
+                        <li><strong>Penalti Waktu:</strong> -1 poin per detik bermain.</li>
+                        <li><strong>Penalti Kesalahan:</strong> -200 poin per kesalahan (Maksimal 3 kesalahan sebelum Game Over).</li>
+                        <li><strong>Penalti Hint:</strong> Hint 1 (-400), Hint 2 (-1.000), Hint 3 (-2.000), Hint 4 (-3.500).</li>
+                        <li><strong>Anti-Spam Hint &amp; Anti-Cheat:</strong> Penggunaan <strong>5 atau lebih hint</strong> atau <strong>Instant Solve</strong> otomatis mendiskualifikasi permainan dari Leaderboard Global (Status: <em>Mode Latihan / 0 Skor</em>).</li>
+                    </ul>
+                </div>
+
+                <!-- Seksi 5: Shortcut Keyboard Lengkap -->
+                <div class="info-section">
+                    <h4 class="info-section-title">
+                        <span class="info-sec-icon">⌨️</span> Shortcut Keyboard Lengkap
+                    </h4>
+                    <div class="shortcut-grid">
+                        <div class="shortcut-item"><kbd>Panah</kbd> / <kbd>WASD</kbd> <span>Navigasi Sel Papan</span></div>
+                        <div class="shortcut-item"><kbd>1</kbd> - <kbd>9</kbd> / <kbd>Numpad</kbd> <span>Isi Angka / Catatan</span></div>
+                        <div class="shortcut-item"><kbd>Backspace</kbd> / <kbd>Del</kbd> <span>Hapus Isi Sel</span></div>
+                        <div class="shortcut-item"><kbd>N</kbd> <span>Toggle Mode Notes (Pensil)</span></div>
+                        <div class="shortcut-item"><kbd>U</kbd> <span>Undo Langkah Terakhir</span></div>
+                        <div class="shortcut-item"><kbd>H</kbd> <span>Minta Petunjuk (Hint)</span></div>
+                        <div class="shortcut-item"><kbd>Spasi</kbd> <span>Pause / Resume Permainan</span></div>
+                        <div class="shortcut-item"><kbd>ESC</kbd> <span>Tutup Dialog / Modal</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="closeInfoBtn" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">Saya Mengerti, Ayo Bermain! 🚀</button>
         </div>
     </div>
 
