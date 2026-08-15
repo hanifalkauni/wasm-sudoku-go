@@ -25,8 +25,20 @@ let inMemoryLeaderboard = {
 };
 
 async function executeRedisCommand(commandArray) {
-    const kvUrl = process.env.KV_REST_API_URL;
-    const kvToken = process.env.KV_REST_API_TOKEN;
+    // Otomatis deteksi berbagai prefix env Vercel: KV_REST_API_URL, STORAGE_REST_API_URL, dll.
+    const kvUrl = 
+        process.env.KV_REST_API_URL || 
+        process.env.STORAGE_REST_API_URL || 
+        process.env.STORAGE_URL || 
+        process.env.REDIS_REST_API_URL ||
+        process.env.UPSTASH_REDIS_REST_URL;
+
+    const kvToken = 
+        process.env.KV_REST_API_TOKEN || 
+        process.env.STORAGE_REST_API_TOKEN || 
+        process.env.STORAGE_TOKEN ||
+        process.env.REDIS_REST_API_TOKEN ||
+        process.env.UPSTASH_REDIS_REST_TOKEN;
 
     if (!kvUrl || !kvToken) {
         return null; // Signals fallback to in-memory
