@@ -1343,20 +1343,21 @@ body {
 }
 
 .info-section {
-  background: rgba(30, 40, 58, 0.4);
-  border: 1px solid rgba(99, 102, 241, 0.18);
+  background: var(--bg-primary);
+  border: var(--glass-border);
   border-radius: var(--radius-md);
-  padding: 0.9rem 1.1rem;
+  padding: 0.95rem 1.15rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .info-section-title {
-  font-size: 0.925rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .info-sec-icon {
@@ -1364,18 +1365,18 @@ body {
 }
 
 .info-text {
-  font-size: 0.825rem;
+  font-size: 0.835rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
 }
 
 .info-list {
-  font-size: 0.815rem;
+  font-size: 0.825rem;
   color: var(--text-secondary);
-  padding-left: 1.2rem;
+  padding-left: 1.25rem;
   margin: 0.35rem 0 0 0;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .info-list li {
@@ -1390,7 +1391,7 @@ body {
 .shortcut-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
+  gap: 0.55rem;
   margin-top: 0.4rem;
 }
 
@@ -1403,25 +1404,30 @@ body {
 .shortcut-item {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.775rem;
-  color: var(--text-secondary);
-  background: rgba(15, 23, 42, 0.5);
+  gap: 0.5rem;
+  font-size: 0.785rem;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-grid-thin);
-  padding: 0.35rem 0.55rem;
+  padding: 0.4rem 0.65rem;
   border-radius: var(--radius-sm);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.shortcut-item span {
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 .shortcut-item kbd {
-  background: rgba(99, 102, 241, 0.25);
-  border: 1px solid rgba(99, 102, 241, 0.4);
-  color: #ffffff;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  color: #ffffff !important;
   font-family: var(--font-main);
   font-size: 0.725rem;
-  font-weight: 700;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 800;
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
   white-space: nowrap;
 }
 
