@@ -12,15 +12,16 @@
   
   --border-color: rgba(255, 255, 255, 0.08);
   --border-focus: #6366f1;
-  --border-grid-thick: #818cf8; /* High-contrast vivid indigo for 3x3 block dividers in Dark Mode */
+  --border-grid-thick: #55627a; /* Distinct 3x3 block separator lines */
+  --border-cell: rgba(255, 255, 255, 0.09); /* 1px border between cells */
   --border-grid-thin: rgba(255, 255, 255, 0.08);
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --text-clue: #38bdf8;
-  --text-user: #e2e8f0;
-  --text-notes: #a5b4fc;
+  --text-user: #f1f5f9;
+  --text-notes: #94a3b8;
 
   --accent-primary: #6366f1;
   --accent-primary-hover: #4f46e5;
@@ -31,14 +32,15 @@
   --accent-amber: #f59e0b;
   --accent-glow: rgba(99, 102, 241, 0.35);
 
-  /* Cell Highlight Colors */
-  --cell-bg: rgba(15, 23, 42, 0.5);
-  --cell-bg-hover: rgba(99, 102, 241, 0.15);
+  /* Alternating 3x3 Block Backgrounds (Checkerboard Effect like Reference) */
+  --cell-bg: #141b29;      /* Darker 3x3 block */
+  --cell-bg-alt: #1e283a;  /* Lighter 3x3 block */
+  --cell-bg-hover: rgba(99, 102, 241, 0.2);
   --cell-bg-active: rgba(99, 102, 241, 0.35);
-  --cell-bg-related: rgba(99, 102, 241, 0.12);
-  --cell-bg-same-number: rgba(6, 182, 212, 0.28);
-  --cell-bg-error: rgba(244, 63, 94, 0.3);
-  --cell-bg-clue: rgba(255, 255, 255, 0.02);
+  --cell-bg-related: rgba(99, 102, 241, 0.16);
+  --cell-bg-same-number: rgba(6, 182, 212, 0.3);
+  --cell-bg-error: rgba(244, 63, 94, 0.35);
+  --cell-bg-clue: transparent;
 
   /* Glassmorphism & Shadows */
   --glass-blur: blur(16px);
@@ -65,8 +67,12 @@
   
   --border-color: rgba(0, 0, 0, 0.08);
   --border-focus: #4f46e5;
-  --border-grid-thick: #4f46e5; /* High-contrast indigo in Light Mode */
+  --border-grid-thick: #64748b;
+  --border-cell: rgba(0, 0, 0, 0.07);
   --border-grid-thin: rgba(0, 0, 0, 0.08);
+
+  --cell-bg: #ffffff;
+  --cell-bg-alt: #f1f5f9;
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -383,8 +389,7 @@ body {
   background: var(--border-grid-thick);
   border: 3.5px solid var(--border-grid-thick);
   border-radius: var(--radius-md);
-  gap: 1px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 25px rgba(99, 102, 241, 0.2);
   user-select: none;
   overflow: hidden;
 }
@@ -410,6 +415,13 @@ body {
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   color: var(--text-user);
+  border-right: 1px solid var(--border-cell);
+  border-bottom: 1px solid var(--border-cell);
+}
+
+/* Alternating 3x3 Block Backgrounds (Checkerboard Effect like Reference Image) */
+.sudoku-cell.block-alt {
+  background: var(--cell-bg-alt);
 }
 
 @media (max-width: 520px) {
@@ -429,25 +441,31 @@ body {
 .sudoku-cell:nth-child(n+46):nth-child(-n+54) {
   border-bottom: 3px solid var(--border-grid-thick);
 }
+.sudoku-cell:nth-child(n+73):nth-child(-n+81) {
+  border-bottom: none;
+}
 
 /* Cell States */
 .sudoku-cell.clue {
-  background: var(--cell-bg-clue);
   color: var(--text-clue);
   font-weight: 800;
 }
 
 .sudoku-cell.related {
-  background: var(--cell-bg-related);
+  background: rgba(99, 102, 241, 0.18);
+}
+.sudoku-cell.block-alt.related {
+  background: rgba(99, 102, 241, 0.26);
 }
 
 .sudoku-cell.same-number {
-  background: var(--cell-bg-same-number);
+  background: rgba(6, 182, 212, 0.32) !important;
+  color: #ffffff;
 }
 
 .sudoku-cell.selected {
-  background: var(--cell-bg-active) !important;
-  box-shadow: inset 0 0 0 2px var(--accent-primary), 0 0 16px var(--accent-glow);
+  background: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: inset 0 0 0 2px var(--accent-cyan), 0 0 16px rgba(6, 182, 212, 0.4) !important;
   z-index: 2;
 }
 

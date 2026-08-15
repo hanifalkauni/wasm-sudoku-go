@@ -310,8 +310,16 @@ class SudokuApp {
             const notesGridElem = cell.querySelector('.notes-grid');
             const noteNums = notesGridElem.querySelectorAll('.note-num');
 
-            // Reset classes
+            // Reset classes & apply 3x3 block checkerboard
+            const r = Math.floor(i / 9);
+            const c = i % 9;
+            const boxR = Math.floor(r / 3);
+            const boxC = Math.floor(c / 3);
+
             cell.className = 'sudoku-cell';
+            if ((boxR + boxC) % 2 === 1) {
+                cell.classList.add('block-alt');
+            }
             if (isClue) cell.classList.add('clue');
 
             // Render value or notes
