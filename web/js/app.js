@@ -658,8 +658,10 @@ class SudokuApp {
                 this.dom.vicScore.textContent = this.calculatedScore.toLocaleString();
                 this.dom.vicRankBadge.textContent = scoreData.rankTitle || 'Sudoku Solver';
 
-                // Evaluasi kelayakan Leaderboard (Anti-Spam Hint)
-                if (scoreData.score <= 0 || !scoreData.eligibleForLeaderboard) {
+                // Evaluasi kelayakan Leaderboard (Anti-Spam Hint: diskualifikasi jika >= 5 hint atau skor 0)
+                const isDisqualified = this.hintsUsed >= 5 || this.calculatedScore <= 0 || scoreData.eligibleForLeaderboard === false;
+
+                if (isDisqualified) {
                     this.dom.submitScoreBtn.disabled = true;
                     this.dom.submitScoreBtn.textContent = 'Tidak Memenuhi Syarat';
                     this.dom.submitStatusText.style.color = 'var(--accent-rose)';
